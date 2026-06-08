@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocks & Crystals</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="sparkles" id="sparkles"></div>
+    <div class="hero-content">
+      <h1 class="site-title">💎 Rocks &amp; Crystals</h1>
+      <p class="site-tagline">Discover the magic hidden in every stone</p>
+      <a href="#scanner" class="btn-primary">Scan Your Rock</a>
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="sticky-nav">
+    <a href="#scanner">Scanner</a>
+    <a href="#birthstones">Birthstones</a>
+    <a href="#healing">Healing Crystals</a>
+    <a href="#rarity">Rarity Guide</a>
+    <a href="#contact">Contact</a>
+    <a href="#population">Population</a>
+    <a href="#tutorials">Tutorials</a>
+  </nav>
+
+  <!-- SCANNER -->
+  <section id="scanner" class="section">
+    <h2 class="section-title">🔍 Rock &amp; Crystal Scanner</h2>
+    <p class="section-sub">Upload a photo of your rock or crystal and discover everything about it.</p>
+
+    <div class="scanner-box">
+      <label class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept="image/*" capture="environment" hidden />
+        <div class="upload-icon">📷</div>
+        <p>Click or drag an image here<br /><small>or use your camera</small></p>
+        <img id="previewImg" class="preview-img" alt="preview" />
+      </label>
+
+      <div class="rock-name-row">
+        <input type="text" id="rockNameInput" placeholder="Or type a rock/crystal name..." />
+        <button class="btn-scan" id="scanBtn">Identify</button>
+      </div>
+    </div>
+
+    <div id="scanResult" class="scan-result hidden"></div>
+  </section>
+
+  <!-- BIRTHSTONES -->
+  <section id="birthstones" class="section section-dark">
+    <h2 class="section-title">🌙 Birthstones</h2>
+    <p class="section-sub">Every month has a gemstone that brings luck and meaning to those born within it.</p>
+    <div class="grid" id="birthstoneGrid"></div>
+  </section>
+
+  <!-- HEALING -->
+  <section id="healing" class="section">
+    <h2 class="section-title">✨ Healing Crystals &amp; Rocks</h2>
+    <p class="section-sub">Crystals have been used for centuries for their powerful energy and healing properties.</p>
+    <div class="grid" id="healingGrid"></div>
+  </section>
+
+  <!-- RARITY -->
+  <section id="rarity" class="section section-dark">
+    <h2 class="section-title">💠 Rarity Guide</h2>
+    <p class="section-sub">How rare is your crystal? Learn what makes certain stones extraordinarily valuable.</p>
+    <div class="rarity-table">
+      <div class="rarity-row header-row">
+        <span>Crystal</span><span>Rarity</span><span>Why It's Special</span>
+      </div>
+      <div id="rarityList"></div>
+    </div>
+  </section>
+
+  <!-- POPULATION -->
+  <section id="population" class="section">
+    <h2 class="section-title">👥 Our Community</h2>
+    <p class="section-sub">Every person who joins the Crystal Forum becomes part of our growing family of rock & crystal lovers.</p>
+
+    <div class="members-hero">
+      <div class="members-count-wrap">
+        <div class="members-label">Total Members Joined</div>
+        <div class="members-count" id="membersCount">0</div>
+        <div class="members-sub">and growing every day 💎</div>
+      </div>
+      <div class="members-stats">
+        <div class="members-stat-card">
+          <span>📅</span>
+          <div class="members-stat-num" id="statMonthly">0</div>
+          <div class="members-stat-label">Monthly Members</div>
+        </div>
+        <div class="members-stat-card">
+          <span>🏆</span>
+          <div class="members-stat-num" id="statYearly">0</div>
+          <div class="members-stat-label">Yearly Members</div>
+        </div>
+        <div class="members-stat-card">
+          <span>🌍</span>
+          <div class="members-stat-num" id="statCountries">0</div>
+          <div class="members-stat-label">Countries</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="members-join-cta">
+      <p>Want to be counted? Join the Crystal Forum today.</p>
+      <button class="btn-primary" onclick="openCommunityModal({preventDefault:()=>{}})">Join Now 💎</button>
+    </div>
+  </section>
+
+  <!-- TUTORIALS -->
+  <section id="tutorials" class="section section-dark">
+    <h2 class="section-title">🎥 Rock &amp; Crystal Tutorials</h2>
+    <p class="section-sub">Learn from the experts. Watch video guides to identify rocks, care for crystals, and discover the science behind stones.</p>
+    <div class="tutorials-grid" id="tutorialsGrid"></div>
+  </section>
+
+  <!-- CONTACT / FOOTER -->
+  <footer id="contact" class="footer">
+    <div class="footer-content">
+      <h3>📬 Contact Us</h3>
+      <p>Have a question about a rock or crystal? We'd love to hear from you!</p>
+      <div class="contact-cards">
+        <div class="contact-card">
+          <span>📧</span>
+          <div>
+            <strong>Email</strong>
+            <a href="mailto:roninthadani@gmail.com">roninthadani@gmail.com</a>
+          </div>
+        </div>
+        <div class="contact-card">
+          <span>📞</span>
+          <div>
+            <strong>Phone</strong>
+            <a href="tel:+918451076646">+91 84510 76646</a>
+          </div>
+        </div>
+        <div class="contact-card">
+          <span>💬</span>
+          <div>
+            <strong>Community</strong>
+            <a href="#" onclick="openCommunityModal(event)">Join our Crystal Forum</a>
+          </div>
+        </div>
+        <div class="contact-card">
+          <span>📍</span>
+          <div>
+            <strong>Location</strong>
+            <span>Earth's Hidden Treasures, Worldwide</span>
+          </div>
+        </div>
+      </div>
+      <form class="contact-form" onsubmit="submitContact(event)">
+        <input type="text" placeholder="Your name" required />
+        <input type="email" placeholder="Your email" required />
+        <textarea placeholder="Ask us anything about rocks and crystals..." rows="4" required></textarea>
+        <button type="submit" class="btn-primary">Send Message 💌</button>
+      </form>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Rocks &amp; Crystals — Unearthing Nature's Wonders</p>
+    </div>
+  </footer>
+
+  <!-- COMMUNITY MODAL -->
+  <div id="communityModal" class="modal-overlay hidden" onclick="closeCommunityModal(event)">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('communityModal').classList.add('hidden')">✕</button>
+      <div class="early-bird-banner" id="earlyBirdBanner"></div>
+      <div class="modal-icon">💎</div>
+      <h2 class="modal-title">Crystal Forum Membership</h2>
+      <p class="modal-sub">Join thousands of rock & crystal enthusiasts. Get access to exclusive forums, expert ID help, rare finds marketplace, and weekly crystal deep-dives.</p>
+      <div class="pricing-cards">
+        <div class="pricing-card">
+          <div class="pricing-label">Monthly</div>
+          <div class="pricing-amount"><span id="monthlyPrice">$10</span><span>/mo</span></div>
+          <ul class="pricing-perks">
+            <li>✅ Full forum access</li>
+            <li>✅ Expert crystal ID</li>
+            <li>✅ Rare finds alerts</li>
+            <li>✅ Cancel anytime</li>
+          </ul>
+          <button class="btn-pricing" onclick="showToast('Redirecting to checkout...'); document.getElementById('communityModal').classList.add('hidden')">Get Monthly</button>
+        </div>
+        <div class="pricing-card pricing-featured">
+          <div class="pricing-best">Best Value</div>
+          <div class="pricing-label">Yearly</div>
+          <div class="pricing-amount"><span id="yearlyPrice">$200</span><span>/yr</span></div>
+          <div class="pricing-save">Save $20 vs monthly</div>
+          <ul class="pricing-perks">
+            <li>✅ Everything in Monthly</li>
+            <li>✅ Priority expert support</li>
+            <li>✅ Exclusive yearly gems guide</li>
+            <li>✅ Members-only events</li>
+            <li>✅ Get updates first</li>
+          </ul>
+          <button class="btn-pricing btn-pricing-gold" onclick="showToast('Redirecting to checkout...'); document.getElementById('communityModal').classList.add('hidden')">Get Yearly</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -27,6 +27,7 @@
     <a href="#contact">Contact</a>
     <a href="#population">Population</a>
     <a href="#tutorials">Tutorials</a>
+    <a href="#gametime">Game Time</a>
   </nav>
 
   <!-- SCANNER -->
@@ -118,6 +119,50 @@
     <h2 class="section-title">🎥 Rock &amp; Crystal Tutorials</h2>
     <p class="section-sub">Learn from the experts. Watch video guides to identify rocks, care for crystals, and discover the science behind stones.</p>
     <div class="tutorials-grid" id="tutorialsGrid"></div>
+  </section>
+
+  <!-- GAME TIME -->
+  <section id="gametime" class="section">
+    <h2 class="section-title">⏰ Game Time</h2>
+    <p class="section-sub">Set a time limit for your crystal hunt, study session, or game. When the clock hits zero, a <strong>very loud alarm</strong> goes off so you never miss it.</p>
+
+    <div class="gametime-box">
+      <div class="gt-display" id="gtDisplay">00:00:00</div>
+      <div class="gt-progress"><div class="gt-progress-bar" id="gtProgressBar"></div></div>
+
+      <div class="gt-presets">
+        <button class="gt-preset" data-seconds="60">1 min</button>
+        <button class="gt-preset" data-seconds="300">5 min</button>
+        <button class="gt-preset" data-seconds="600">10 min</button>
+        <button class="gt-preset" data-seconds="1500">25 min</button>
+        <button class="gt-preset" data-seconds="3600">1 hr</button>
+      </div>
+
+      <div class="gt-inputs">
+        <div class="gt-input-group">
+          <input type="number" id="gtHours" min="0" max="99" placeholder="0" />
+          <label>Hours</label>
+        </div>
+        <span class="gt-colon">:</span>
+        <div class="gt-input-group">
+          <input type="number" id="gtMinutes" min="0" max="59" placeholder="0" />
+          <label>Minutes</label>
+        </div>
+        <span class="gt-colon">:</span>
+        <div class="gt-input-group">
+          <input type="number" id="gtSeconds" min="0" max="59" placeholder="0" />
+          <label>Seconds</label>
+        </div>
+      </div>
+
+      <div class="gt-controls">
+        <button class="btn-primary" id="gtStartBtn">▶ Start</button>
+        <button class="btn-scan" id="gtPauseBtn" disabled>⏸ Pause</button>
+        <button class="gt-reset" id="gtResetBtn">↺ Reset</button>
+      </div>
+
+      <button class="gt-stop hidden" id="gtStopBtn">🔇 Stop Alarm</button>
+    </div>
   </section>
 
   <!-- CONTACT / FOOTER -->

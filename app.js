@@ -309,6 +309,187 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.add('hidden'), 3500);
 }
 
+// ── GAME TIME (COUNTDOWN + LOUD ALARM) ───────────────────────────────────────
+
+const GameTime = {
+  remaining: 0,      // seconds left
+  total: 0,          // seconds the timer was started with
+  intervalId: null,
+  running: false,
+  audioCtx: null,
+  alarmNodes: null,
+  alarmTimer: null,
+};
+
+function gtFormat(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hrs = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const secs = String(s % 60).padStart(2, '0');
+  return `${hrs}:${mins}:${secs}`;
+}
+
+function gtRender() {
+  const display = document.getElementById('gtDisplay');
+  display.textContent = gtFormat(GameTime.remaining);
+  const bar = document.getElementById('gtProgressBar');
+  const pct = GameTime.total > 0 ? (GameTime.remaining / GameTime.total) * 100 : 0;
+  bar.style.width = pct + '%';
+  // Turn red and pulse in the final 10 seconds
+  display.classList.toggle('gt-warning', GameTime.running && GameTime.remaining <= 10 && GameTime.remaining > 0);
+}
+
+function gtReadInputs() {
+  const h = parseInt(document.getElementById('gtHours').value, 10) || 0;
+  const m = parseInt(document.getElementById('gtMinutes').value, 10) || 0;
+  const s = parseInt(document.getElementById('gtSeconds').value, 10) || 0;
+  return h * 3600 + m * 60 + s;
+}
+
+function gtSetButtons(running) {
+  document.getElementById('gtStartBtn').disabled = running;
+  document.getElementById('gtPauseBtn').disabled = !running;
+}
+
+function gtStart() {
+  // If not already counting down, load time from inputs.
+  if (GameTime.remaining <= 0) {
+    const total = gtReadInputs();
+    if (total <= 0) { showToast('⏰ Set a time limit first!'); return; }
+    GameTime.remaining = total;
+    GameTime.total = total;
+  }
+  if (GameTime.running) return;
+  gtStopAlarm();
+  GameTime.running = true;
+  gtSetButtons(true);
+  gtRender();
+  GameTime.intervalId = setInterval(() => {
+    GameTime.remaining--;
+    gtRender();
+    if (GameTime.remaining <= 0) {
+      gtPause();
+      gtTimeUp();
+    }
+  }, 1000);
+}
+
+function gtPause() {
+  GameTime.running = false;
+  clearInterval(GameTime.intervalId);
+  GameTime.intervalId = null;
+  gtSetButtons(false);
+  gtRender();
+}
+
+function gtReset() {
+  gtPause();
+  gtStopAlarm();
+  GameTime.remaining = 0;
+  GameTime.total = 0;
+  document.getElementById('gtHours').value = '';
+  document.getElementById('gtMinutes').value = '';
+  document.getElementById('gtSeconds').value = '';
+  gtRender();
+}
+
+function gtTimeUp() {
+  gtPlayAlarm(); // starts fresh (clears any prior alarm/UI state internally)
+  document.getElementById('gtStopBtn').classList.remove('hidden');
+  document.getElementById('gtDisplay').classList.add('gt-alarming');
+  showToast("⏰ TIME'S UP!");
+}
+
+// Generate a very loud oscillating siren with the Web Audio API — no audio files needed.
+function gtPlayAlarm() {
+  gtStopAlarm();
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    GameTime.audioCtx = ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const gain = ctx.createGain();
+    gain.gain.value = 1.0; // maximum — very loud
+    gain.connect(ctx.destination);
+
+    // Two detuned oscillators for a harsh, attention-grabbing tone.
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    osc1.type = 'square';
+    osc2.type = 'sawtooth';
+    osc2.detune.value = 12;
+
+    // LFO sweeps the pitch up and down like an emergency siren.
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 4;       // 4 sweeps per second
+    lfoGain.gain.value = 500;      // sweep depth in Hz
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc1.frequency);
+    lfoGain.connect(osc2.frequency);
+    osc1.frequency.value = 900;
+    osc2.frequency.value = 900;
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+
+    const now = ctx.currentTime;
+    osc1.start(now);
+    osc2.start(now);
+    lfo.start(now);
+
+    GameTime.alarmNodes = { ctx, osc1, osc2, lfo, gain };
+
+    // Pulse the volume on/off so it really grabs attention, and auto-stop after 30s.
+    let on = true;
+    GameTime.alarmTimer = setInterval(() => {
+      on = !on;
+      gain.gain.setTargetAtTime(on ? 1.0 : 0.0, ctx.currentTime, 0.02);
+    }, 350);
+    setTimeout(gtStopAlarm, 30000);
+  } catch (err) {
+    // Fallback: at least vibrate on supporting devices.
+    if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+  }
+}
+
+function gtStopAlarm() {
+  if (GameTime.alarmTimer) { clearInterval(GameTime.alarmTimer); GameTime.alarmTimer = null; }
+  if (GameTime.alarmNodes) {
+    const { osc1, osc2, lfo, ctx } = GameTime.alarmNodes;
+    try { osc1.stop(); osc2.stop(); lfo.stop(); } catch (e) {}
+    try { ctx.close(); } catch (e) {}
+    GameTime.alarmNodes = null;
+    GameTime.audioCtx = null;
+  }
+  document.getElementById('gtStopBtn').classList.add('hidden');
+  document.getElementById('gtDisplay').classList.remove('gt-alarming');
+}
+
+function initGameTime() {
+  if (!document.getElementById('gametime')) return;
+  document.getElementById('gtStartBtn').addEventListener('click', gtStart);
+  document.getElementById('gtPauseBtn').addEventListener('click', gtPause);
+  document.getElementById('gtResetBtn').addEventListener('click', gtReset);
+  document.getElementById('gtStopBtn').addEventListener('click', gtStopAlarm);
+
+  document.querySelectorAll('.gt-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const secs = parseInt(btn.dataset.seconds, 10);
+      gtReset();
+      document.getElementById('gtHours').value = Math.floor(secs / 3600) || '';
+      document.getElementById('gtMinutes').value = Math.floor((secs % 3600) / 60) || '';
+      document.getElementById('gtSeconds').value = secs % 60 || '';
+      GameTime.remaining = secs;
+      GameTime.total = secs;
+      gtRender();
+    });
+  });
+
+  gtRender();
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 createSparkles();
@@ -317,3 +498,4 @@ renderHealing();
 renderRarity();
 renderTutorials();
 initMembersCounter();
+initGameTime();

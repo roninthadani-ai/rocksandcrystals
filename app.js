@@ -309,6 +309,40 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.add('hidden'), 3500);
 }
 
+// ── BACKGROUND MUSIC ────────────────────────────────────────────────────────
+
+const musicToggle = document.getElementById('musicToggle');
+const bgMusic = document.getElementById('bgMusic');
+let musicPlaying = false;
+
+bgMusic.volume = 0.3;
+
+musicToggle.addEventListener('click', () => {
+  if (musicPlaying) {
+    bgMusic.pause();
+    musicToggle.classList.remove('playing');
+    musicPlaying = false;
+    showToast('🔇 Music paused');
+  } else {
+    bgMusic.play().catch(() => {
+      showToast('🎵 Click to enable audio');
+    });
+    musicToggle.classList.add('playing');
+    musicPlaying = true;
+    showToast('🎵 Pirates of the Caribbean 🏴‍☠️');
+  }
+});
+
+bgMusic.addEventListener('play', () => {
+  musicPlaying = true;
+  musicToggle.classList.add('playing');
+});
+
+bgMusic.addEventListener('pause', () => {
+  musicPlaying = false;
+  musicToggle.classList.remove('playing');
+});
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 createSparkles();

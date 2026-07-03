@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Time — Timer &amp; Alarm</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <a href="../index.html" class="back-link">← Rocks &amp; Crystals</a>
+
+  <main class="wrap">
+    <header class="gt-header">
+      <h1 class="gt-title">🎮 Game Time</h1>
+      <p class="gt-tagline">Set a time limit. When it hits zero, you'll hear about it.</p>
+    </header>
+
+    <!-- SETUP VIEW -->
+    <section id="setupView" class="panel">
+      <div class="time-inputs">
+        <div class="time-field">
+          <input type="number" id="hoursInput" min="0" max="23" value="0" />
+          <label>hrs</label>
+        </div>
+        <span class="time-sep">:</span>
+        <div class="time-field">
+          <input type="number" id="minutesInput" min="0" max="59" value="15" />
+          <label>min</label>
+        </div>
+        <span class="time-sep">:</span>
+        <div class="time-field">
+          <input type="number" id="secondsInput" min="0" max="59" value="0" />
+          <label>sec</label>
+        </div>
+      </div>
+
+      <div class="presets">
+        <button class="preset-btn" data-min="5">5m</button>
+        <button class="preset-btn" data-min="15">15m</button>
+        <button class="preset-btn" data-min="30">30m</button>
+        <button class="preset-btn" data-min="60">1h</button>
+        <button class="preset-btn" data-min="120">2h</button>
+      </div>
+
+      <div class="volume-row">
+        <label for="volumeSlider">🔊 Alarm volume</label>
+        <input type="range" id="volumeSlider" min="0" max="100" value="100" />
+      </div>
+
+      <div class="setup-actions">
+        <button class="btn-primary" id="startBtn">Start Timer</button>
+        <button class="btn-ghost" id="testAlarmBtn">🔔 Test Alarm</button>
+      </div>
+    </section>
+
+    <!-- RUNNING VIEW -->
+    <section id="runningView" class="panel hidden">
+      <div class="progress-ring-wrap">
+        <svg class="progress-ring" width="260" height="260" viewBox="0 0 260 260">
+          <circle class="ring-bg" cx="130" cy="130" r="115"></circle>
+          <circle class="ring-fg" id="ringFg" cx="130" cy="130" r="115"></circle>
+        </svg>
+        <div class="ring-time" id="timeDisplay">00:00:00</div>
+      </div>
+      <div class="running-actions">
+        <button class="btn-primary" id="pauseResumeBtn">Pause</button>
+        <button class="btn-ghost" id="cancelBtn">Cancel</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ALARM OVERLAY -->
+  <div id="alarmOverlay" class="alarm-overlay hidden">
+    <div class="alarm-content">
+      <div class="alarm-icon">⏰</div>
+      <h2>TIME'S UP!</h2>
+      <p>Your game time has ended.</p>
+      <button class="btn-stop" id="stopAlarmBtn">Stop Alarm</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

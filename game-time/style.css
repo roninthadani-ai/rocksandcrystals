@@ -224,6 +224,17 @@ body {
 }
 .btn-stop:active { transform: scale(0.97); }
 
+/* lock note */
+.lock-note {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 12px;
+}
+
 /* game over overlay */
 .gameover-overlay {
   position: fixed;

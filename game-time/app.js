@@ -8,8 +8,6 @@ const secondsInput = document.getElementById('secondsInput');
 const volumeSlider = document.getElementById('volumeSlider');
 const startBtn = document.getElementById('startBtn');
 const testAlarmBtn = document.getElementById('testAlarmBtn');
-const pauseResumeBtn = document.getElementById('pauseResumeBtn');
-const cancelBtn = document.getElementById('cancelBtn');
 const timeDisplay = document.getElementById('timeDisplay');
 const ringFg = document.getElementById('ringFg');
 const alarmOverlay = document.getElementById('alarmOverlay');
@@ -17,13 +15,13 @@ const stopAlarmBtn = document.getElementById('stopAlarmBtn');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 115;
+const STORAGE_KEY = 'gameTimeTimer';
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
 let totalSeconds = 0;
-let remainingSeconds = 0;
+let endTime = 0; // epoch ms deadline — the timer cannot be paused or cancelled
 let tickHandle = null;
-let isPaused = false;
 let audioCtx = null;
 let sirenStop = null;
 
@@ -35,6 +33,15 @@ function getAudioContext() {
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
+}
+
+// Browsers block sound until the page gets a user gesture. If the alarm
+// fires on a freshly reloaded page, unmute on the first tap/keypress.
+function resumeAudioOnGesture() {
+  if (!audioCtx || audioCtx.state !== 'suspended') return;
+  const resume = () => audioCtx.resume();
+  document.addEventListener('pointerdown', resume, { once: true });
+  document.addEventListener('keydown', resume, { once: true });
 }
 
 function playSiren(durationMs) {
@@ -72,7 +79,6 @@ function playSiren(durationMs) {
   osc2.start();
   osc3.start();
 
-  const startTime = ctx.currentTime;
   let sweepTimer = null;
   let phase = 0;
 
@@ -142,16 +148,33 @@ function setInputsFromMinutes(minutes) {
 }
 
 // ── TIMER ───────────────────────────────────────────────────────────────────
+// Deadline-based: remaining time is always computed from the wall clock,
+// so background-tab throttling can't slow it and a reload can't reset it.
 
-function updateRing() {
-  const progress = totalSeconds === 0 ? 0 : remainingSeconds / totalSeconds;
-  const offset = RING_CIRCUMFERENCE * (1 - progress);
-  ringFg.style.strokeDashoffset = offset;
+function getRemainingSeconds() {
+  return Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
 }
 
 function updateDisplay() {
-  timeDisplay.textContent = formatTime(remainingSeconds);
-  updateRing();
+  const remaining = getRemainingSeconds();
+  timeDisplay.textContent = formatTime(remaining);
+  const progress = totalSeconds === 0 ? 0 : remaining / totalSeconds;
+  ringFg.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
+}
+
+function saveTimer() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ endTime, totalSeconds }));
+}
+
+function clearSavedTimer() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+function showRunningView() {
+  setupView.classList.add('hidden');
+  runningView.classList.remove('hidden');
+  updateDisplay();
+  tickHandle = setInterval(tick, 250);
 }
 
 function startTimer() {
@@ -160,38 +183,37 @@ function startTimer() {
 
   getAudioContext(); // unlock audio on user gesture
 
-  remainingSeconds = totalSeconds;
-  isPaused = false;
-
-  setupView.classList.add('hidden');
-  runningView.classList.remove('hidden');
-  pauseResumeBtn.textContent = 'Pause';
-
-  updateDisplay();
-  tickHandle = setInterval(tick, 1000);
+  endTime = Date.now() + totalSeconds * 1000;
+  saveTimer();
+  showRunningView();
 }
 
 function tick() {
-  if (isPaused) return;
-  remainingSeconds--;
   updateDisplay();
-  if (remainingSeconds <= 0) {
+  if (getRemainingSeconds() <= 0) {
     clearInterval(tickHandle);
     tickHandle = null;
     triggerAlarm();
   }
 }
 
-function togglePauseResume() {
-  isPaused = !isPaused;
-  pauseResumeBtn.textContent = isPaused ? 'Resume' : 'Pause';
-}
+// Reload/reopen mid-countdown? The timer picks up right where it was.
+function restoreTimer() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  } catch (e) { /* ignore corrupt state */ }
+  if (!saved || !saved.endTime) return;
 
-function cancelTimer() {
-  if (tickHandle) clearInterval(tickHandle);
-  tickHandle = null;
-  runningView.classList.add('hidden');
-  setupView.classList.remove('hidden');
+  totalSeconds = saved.totalSeconds;
+  endTime = saved.endTime;
+
+  if (getRemainingSeconds() > 0) {
+    showRunningView();
+  } else {
+    setupView.classList.add('hidden');
+    triggerAlarm();
+  }
 }
 
 // ── ALARM ───────────────────────────────────────────────────────────────────
@@ -199,6 +221,7 @@ function cancelTimer() {
 function triggerAlarm() {
   alarmOverlay.classList.remove('hidden');
   sirenStop = playSiren(null);
+  resumeAudioOnGesture();
   vibrateDevice();
 
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -220,6 +243,7 @@ function announceGameOver() {
 function stopAlarm() {
   if (sirenStop) sirenStop();
   sirenStop = null;
+  clearSavedTimer();
   alarmOverlay.classList.add('hidden');
   runningView.classList.add('hidden');
 
@@ -244,10 +268,10 @@ testAlarmBtn.addEventListener('click', () => {
   playSiren(1500);
   vibrateDevice();
 });
-pauseResumeBtn.addEventListener('click', togglePauseResume);
-cancelBtn.addEventListener('click', cancelTimer);
 stopAlarmBtn.addEventListener('click', stopAlarm);
 
 if ('Notification' in window && Notification.permission === 'default') {
   startBtn.addEventListener('click', () => Notification.requestPermission(), { once: true });
 }
+
+restoreTimer();

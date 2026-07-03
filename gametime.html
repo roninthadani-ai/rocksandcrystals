@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⏰ Game Time</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4af37;
+      --gold-light: #f5e17a;
+      --purple: #7b2d8b;
+      --purple-light: #b06fd4;
+      --dark: #0a0a0f;
+      --text: #e8e0f0;
+      --text-muted: #9988bb;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-border: rgba(212,175,55,0.2);
+      --danger: #ff3b3b;
+    }
+
+    body {
+      font-family: 'Raleway', sans-serif;
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(123,45,139,0.35) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 30%, rgba(30,10,60,0.6) 0%, transparent 55%),
+        linear-gradient(135deg, #050508 0%, #0d0a1a 30%, #1a0f2e 60%, #080510 100%);
+      background-attachment: fixed;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--gold-light); }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      background: linear-gradient(120deg, var(--gold-light), var(--gold), var(--purple-light));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+    }
+
+    .tagline {
+      color: var(--text-muted);
+      margin: 0.4rem 0 2rem;
+      text-align: center;
+    }
+
+    /* ── SETUP ── */
+    .panel {
+      width: 100%;
+      max-width: 560px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.6rem;
+      backdrop-filter: blur(6px);
+    }
+
+    .panel h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.05rem;
+      color: var(--gold-light);
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .preset-btn {
+      padding: 0.7rem 0.4rem;
+      font-family: 'Raleway', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+    .preset-btn.active {
+      background: linear-gradient(120deg, rgba(212,175,55,0.25), rgba(123,45,139,0.25));
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+
+    .custom-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 0.8rem;
+    }
+
+    .time-field { text-align: center; }
+    .time-field label {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+    .time-field input {
+      width: 82px;
+      padding: 0.6rem 0.2rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      text-align: center;
+      color: var(--text);
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      outline: none;
+    }
+    .time-field input:focus { border-color: var(--gold); }
+    /* hide number spinners */
+    .time-field input::-webkit-outer-spin-button,
+    .time-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .time-field input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+    .colon { font-size: 1.6rem; padding-bottom: 0.5rem; color: var(--text-muted); }
+
+    /* ── TIMER DISPLAY ── */
+    .timer-wrap {
+      position: relative;
+      width: min(78vw, 340px);
+      height: min(78vw, 340px);
+      margin: 2.2rem 0 1.4rem;
+    }
+
+    .ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring circle { fill: none; stroke-width: 10; }
+    .ring .track { stroke: rgba(255,255,255,0.08); }
+    .ring .progress {
+      stroke: url(#ringGrad);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s linear, stroke 0.3s;
+    }
+
+    .timer-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #timeDisplay {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.6rem, 14vw, 4.4rem);
+      font-weight: 700;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #timerState {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 0.4rem;
+    }
+
+    .warning #timeDisplay { color: var(--danger); animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0.35; } }
+
+    /* ── CONTROLS ── */
+    .controls { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+
+    .btn {
+      padding: 0.85rem 2.2rem;
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-start {
+      color: #1a1205;
+      background: linear-gradient(120deg, var(--gold-light), var(--gold));
+      box-shadow: 0 4px 20px rgba(212,175,55,0.35);
+    }
+    .btn-pause {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--card-border);
+    }
+    .btn-reset {
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .test-sound {
+      margin-top: 1.6rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .test-sound:hover { color: var(--gold-light); }
+
+    .volume-note {
+      margin-top: 0.6rem;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-align: center;
+      max-width: 420px;
+    }
+
+    /* ── TIME'S UP OVERLAY ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      background: #7a0000;
+      z-index: 100;
+      animation: alarmFlash 0.5s steps(2) infinite;
+    }
+    @keyframes alarmFlash {
+      0%   { background: #8f0000; }
+      50%  { background: #2a0000; }
+    }
+
+    .overlay h2 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.4rem, 10vw, 5.5rem);
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 0 30px rgba(255,80,80,0.9);
+      animation: shake 0.4s infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(-8px) rotate(-1deg); }
+      75% { transform: translateX(8px) rotate(1deg); }
+    }
+
+    .overlay p { color: #ffd7d7; font-size: 1.1rem; }
+
+    .btn-stop-alarm {
+      padding: 1.1rem 3rem;
+      font-size: 1.2rem;
+      color: #7a0000;
+      background: #fff;
+      border-radius: 50px;
+      border: none;
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(255,255,255,0.5);
+    }
+    .btn-stop-alarm:active { transform: scale(0.96); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="index.html">← Back to Rocks &amp; Crystals</a>
+
+  <h1>⏰ Game Time</h1>
+  <p class="tagline">Set your limit. When it's over, you'll <em>definitely</em> know.</p>
+
+  <!-- SETUP -->
+  <div class="panel" id="setupPanel">
+    <h2>Set Time Limit</h2>
+    <div class="presets" id="presets">
+      <button class="preset-btn" data-min="5">5 min</button>
+      <button class="preset-btn" data-min="10">10 min</button>
+      <button class="preset-btn" data-min="15">15 min</button>
+      <button class="preset-btn active" data-min="30">30 min</button>
+      <button class="preset-btn" data-min="45">45 min</button>
+      <button class="preset-btn" data-min="60">1 hour</button>
+    </div>
+    <div class="custom-row">
+      <div class="time-field">
+        <label for="hoursInput">Hours</label>
+        <input type="number" id="hoursInput" min="0" max="23" value="0" />
+      </div>
+      <span class="colon">:</span>
+      <div class="time-field">
+        <label for="minutesInput">Minutes</label>
+        <input type="number" id="minutesInput" min="0" max="59" value="30" />
+      </div>
+      <span class="colon">:</span>
+      <div class="time-field">
+        <label for="secondsInput">Seconds</label>
+        <input type="number" id="secondsInput" min="0" max="59" value="0" />
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMER -->
+  <div class="timer-wrap" id="timerWrap">
+    <svg class="ring" viewBox="0 0 200 200">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f5e17a" />
+          <stop offset="50%" stop-color="#d4af37" />
+          <stop offset="100%" stop-color="#b06fd4" />
+        </linearGradient>
+      </defs>
+      <circle class="track" cx="100" cy="100" r="90"></circle>
+      <circle class="progress" id="ringProgress" cx="100" cy="100" r="90"></circle>
+    </svg>
+    <div class="timer-center">
+      <div id="timeDisplay">30:00</div>
+      <div id="timerState">Ready</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn btn-start" id="startBtn">▶ Start</button>
+    <button class="btn btn-pause hidden" id="pauseBtn">⏸ Pause</button>
+    <button class="btn btn-reset" id="resetBtn">↺ Reset</button>
+  </div>
+
+  <button class="test-sound" id="testBtn">🔊 Test the alarm (short preview)</button>
+  <p class="volume-note">⚠️ The alarm is <strong>VERY LOUD</strong> on purpose. Turn your device volume all the way up, and keep this tab open until the alarm rings.</p>
+
+  <!-- TIME'S UP OVERLAY -->
+  <div class="overlay hidden" id="overlay">
+    <h2>⏰ GAME TIME IS OVER! ⏰</h2>
+    <p>Your time limit has been reached.</p>
+    <button class="btn-stop-alarm" id="stopAlarmBtn">STOP ALARM</button>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    const RING_CIRC = 2 * Math.PI * 90;
+    let totalSeconds = 30 * 60;
+    let endTime = null;          // ms timestamp when the timer ends
+    let remainingAtPause = null; // seconds left when paused
+    let tickInterval = null;
+    let running = false;
+    const originalTitle = document.title;
+
+    // ── Elements ───────────────────────────────────────────
+    const timeDisplay = document.getElementById('timeDisplay');
+    const timerState = document.getElementById('timerState');
+    const timerWrap = document.getElementById('timerWrap');
+    const ringProgress = document.getElementById('ringProgress');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const testBtn = document.getElementById('testBtn');
+    const overlay = document.getElementById('overlay');
+    const stopAlarmBtn = document.getElementById('stopAlarmBtn');
+    const hoursInput = document.getElementById('hoursInput');
+    const minutesInput = document.getElementById('minutesInput');
+    const secondsInput = document.getElementById('secondsInput');
+    const setupPanel = document.getElementById('setupPanel');
+
+    ringProgress.style.strokeDasharray = RING_CIRC;
+    ringProgress.style.strokeDashoffset = 0;
+
+    // ── Setup: presets + custom inputs ─────────────────────
+    document.getElementById('presets').addEventListener('click', (e) => {
+      const btn = e.target.closest('.preset-btn');
+      if (!btn || running) return;
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mins = parseInt(btn.dataset.min, 10);
+      hoursInput.value = Math.floor(mins / 60);
+      minutesInput.value = mins % 60;
+      secondsInput.value = 0;
+      readInputs();
+    });
+
+    [hoursInput, minutesInput, secondsInput].forEach(inp => {
+      inp.addEventListener('input', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        readInputs();
+      });
+    });
+
+    function readInputs() {
+      const h = clamp(parseInt(hoursInput.value, 10) || 0, 0, 23);
+      const m = clamp(parseInt(minutesInput.value, 10) || 0, 0, 59);
+      const s = clamp(parseInt(secondsInput.value, 10) || 0, 0, 59);
+      totalSeconds = h * 3600 + m * 60 + s;
+      renderTime(totalSeconds);
+    }
+
+    function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+    // ── Rendering ──────────────────────────────────────────
+    function renderTime(secs) {
+      secs = Math.max(0, Math.ceil(secs));
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      const text = h > 0
+        ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+        : `${m}:${String(s).padStart(2, '0')}`;
+      timeDisplay.textContent = text;
+      if (running) document.title = `${text} — Game Time`;
+
+      const frac = totalSeconds > 0 ? secs / totalSeconds : 0;
+      ringProgress.style.strokeDashoffset = RING_CIRC * (1 - frac);
+      timerWrap.classList.toggle('warning', running && secs <= 60 && secs > 0);
+    }
+
+    // ── Timer engine (wall-clock based, survives tab throttling) ──
+    function start() {
+      if (totalSeconds <= 0) {
+        timerState.textContent = 'Set a time first!';
+        return;
+      }
+      unlockAudio(); // must happen inside a user gesture
+      const secondsLeft = remainingAtPause !== null ? remainingAtPause : totalSeconds;
+      endTime = Date.now() + secondsLeft * 1000;
+      remainingAtPause = null;
+      running = true;
+      tickInterval = setInterval(tick, 250);
+      timerState.textContent = 'Counting down…';
+      startBtn.classList.add('hidden');
+      pauseBtn.classList.remove('hidden');
+      setupPanel.style.opacity = '0.45';
+      setupPanel.style.pointerEvents = 'none';
+      tick();
+    }
+
+    function pause() {
+      remainingAtPause = Math.max(0, (endTime - Date.now()) / 1000);
+      stopTicking();
+      timerState.textContent = 'Paused';
+      document.title = '⏸ Paused — Game Time';
+      startBtn.textContent = '▶ Resume';
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+    }
+
+    function reset() {
+      stopTicking();
+      stopAlarm();
+      overlay.classList.add('hidden');
+      remainingAtPause = null;
+      endTime = null;
+      document.title = originalTitle;
+      timerState.textContent = 'Ready';
+      startBtn.textContent = '▶ Start';
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      setupPanel.style.opacity = '';
+      setupPanel.style.pointerEvents = '';
+      timerWrap.classList.remove('warning');
+      readInputs();
+    }
+
+    function stopTicking() {
+      running = false;
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+
+    function tick() {
+      const secsLeft = (endTime - Date.now()) / 1000;
+      renderTime(secsLeft);
+      if (secsLeft <= 0) {
+        stopTicking();
+        timeUp();
+      }
+    }
+
+    function timeUp() {
+      renderTime(0);
+      timerState.textContent = "Time's up!";
+      document.title = "🚨 TIME'S UP! — Game Time";
+      overlay.classList.remove('hidden');
+      startAlarm();
+      if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
+    }
+
+    startBtn.addEventListener('click', start);
+    pauseBtn.addEventListener('click', pause);
+    resetBtn.addEventListener('click', reset);
+    stopAlarmBtn.addEventListener('click', () => {
+      stopAlarm();
+      overlay.classList.add('hidden');
+      reset();
+    });
+
+    // ── VERY LOUD ALARM (Web Audio API) ────────────────────
+    // A two-tone siren: stacked square-wave oscillators sweeping
+    // between pitches, run through a compressor and full gain so it
+    // is as loud as the browser allows.
+    let audioCtx = null;
+    let alarmNodes = null;
+
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function startAlarm() {
+      unlockAudio();
+      if (alarmNodes) return; // already ringing
+
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+
+      // Compressor squashes peaks so we can push overall level to max.
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-30, now);
+      compressor.ratio.setValueAtTime(20, now);
+      compressor.attack.setValueAtTime(0.002, now);
+      compressor.release.setValueAtTime(0.1, now);
+
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(1.0, now); // maximum output
+
+      compressor.connect(master);
+      master.connect(ctx.destination);
+
+      // Siren LFO: sweeps oscillator pitch up and down.
+      const lfo = ctx.createOscillator();
+      lfo.type = 'triangle';
+      lfo.frequency.setValueAtTime(3.5, now); // sweeps per second
+
+      const oscillators = [lfo];
+      // Stack detuned square waves — harsh, attention-grabbing.
+      [880, 884, 1760].forEach(base => {
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(base, now);
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.setValueAtTime(base * 0.35, now); // sweep depth
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        osc.connect(compressor);
+        osc.start(now);
+        oscillators.push(osc);
+      });
+      lfo.start(now);
+
+      // On/off pulsing makes it even harder to ignore.
+      const pulse = setInterval(() => {
+        const t = ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(1.0, t);
+        master.gain.setValueAtTime(0.0, t + 0.55);
+        master.gain.setValueAtTime(1.0, t + 0.7);
+      }, 700);
+
+      alarmNodes = { oscillators, master, compressor, pulse };
+    }
+
+    function stopAlarm() {
+      if (!alarmNodes) return;
+      clearInterval(alarmNodes.pulse);
+      const t = audioCtx.currentTime;
+      alarmNodes.master.gain.cancelScheduledValues(t);
+      alarmNodes.master.gain.setValueAtTime(0, t);
+      alarmNodes.oscillators.forEach(o => { try { o.stop(); } catch (e) {} });
+      alarmNodes = null;
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+
+    // Short 2-second preview so users can check their volume.
+    testBtn.addEventListener('click', () => {
+      if (alarmNodes) return;
+      startAlarm();
+      testBtn.disabled = true;
+      setTimeout(() => {
+        stopAlarm();
+        testBtn.disabled = false;
+      }, 2000);
+    });
+
+    // Initial paint
+    readInputs();
+  </script>
+</body>
+</html>

@@ -14,6 +14,7 @@ const timeDisplay = document.getElementById('timeDisplay');
 const ringFg = document.getElementById('ringFg');
 const alarmOverlay = document.getElementById('alarmOverlay');
 const stopAlarmBtn = document.getElementById('stopAlarmBtn');
+const gameOverOverlay = document.getElementById('gameOverOverlay');
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 115;
 
@@ -38,22 +39,38 @@ function getAudioContext() {
 
 function playSiren(durationMs) {
   const ctx = getAudioContext();
-  const masterGain = ctx.createGain();
   const volume = Number(volumeSlider.value) / 100;
-  masterGain.gain.value = volume;
-  masterGain.connect(ctx.destination);
+
+  // Compressor lets us push the gain way past 1.0 without clipping,
+  // which is what makes this genuinely LOUD.
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -18;
+  compressor.knee.value = 6;
+  compressor.ratio.value = 20;
+  compressor.attack.value = 0.002;
+  compressor.release.value = 0.1;
+  compressor.connect(ctx.destination);
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = volume * 4;
+  masterGain.connect(compressor);
 
   const osc1 = ctx.createOscillator();
   osc1.type = 'sawtooth';
   const osc2 = ctx.createOscillator();
   osc2.type = 'square';
   osc2.frequency.value = 880;
+  const osc3 = ctx.createOscillator();
+  osc3.type = 'square';
+  osc3.frequency.value = 1760;
 
   osc1.connect(masterGain);
   osc2.connect(masterGain);
+  osc3.connect(masterGain);
 
   osc1.start();
   osc2.start();
+  osc3.start();
 
   const startTime = ctx.currentTime;
   let sweepTimer = null;
@@ -65,6 +82,7 @@ function playSiren(durationMs) {
     phase += 0.12;
     const freq = 850 + Math.sin(phase) * 350;
     osc1.frequency.setValueAtTime(freq, t);
+    osc3.frequency.setValueAtTime(freq * 2, t);
   }
   sweep();
   sweepTimer = setInterval(sweep, 60);
@@ -77,9 +95,12 @@ function playSiren(durationMs) {
     setTimeout(() => {
       osc1.stop();
       osc2.stop();
+      osc3.stop();
       osc1.disconnect();
       osc2.disconnect();
+      osc3.disconnect();
       masterGain.disconnect();
+      compressor.disconnect();
     }, 80);
   }
 
@@ -185,12 +206,30 @@ function triggerAlarm() {
   }
 }
 
+function announceGameOver() {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance('Game time over');
+    msg.volume = Number(volumeSlider.value) / 100;
+    msg.rate = 0.85;
+    msg.pitch = 0.9;
+    speechSynthesis.speak(msg);
+  }
+}
+
 function stopAlarm() {
   if (sirenStop) sirenStop();
   sirenStop = null;
   alarmOverlay.classList.add('hidden');
   runningView.classList.add('hidden');
-  setupView.classList.remove('hidden');
+
+  // "GAME TIME OVER" splash with voice announcement
+  gameOverOverlay.classList.remove('hidden');
+  announceGameOver();
+  setTimeout(() => {
+    gameOverOverlay.classList.add('hidden');
+    setupView.classList.remove('hidden');
+  }, 3000);
 }
 
 // ── EVENTS ──────────────────────────────────────────────────────────────────

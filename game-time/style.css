@@ -224,6 +224,41 @@ body {
 }
 .btn-stop:active { transform: scale(0.97); }
 
+/* game over overlay */
+.gameover-overlay {
+  position: fixed;
+  inset: 0;
+  background: #05060d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.gameover-content { text-align: center; }
+.gameover-icon {
+  font-size: 5rem;
+  display: inline-block;
+  animation: popIn 0.4s ease-out;
+}
+.gameover-text {
+  font-size: clamp(2.2rem, 9vw, 4.5rem);
+  margin: 16px 0 0;
+  letter-spacing: 0.12em;
+  background: linear-gradient(90deg, var(--danger), #ff9d3b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: popIn 0.4s ease-out, gameOverPulse 1s infinite alternate 0.4s;
+}
+@keyframes popIn {
+  from { transform: scale(0.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes gameOverPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
 @media (max-width: 420px) {
   .panel { padding: 24px 18px; }
   .time-field input { width: 60px; font-size: 1.6rem; }
